@@ -1,0 +1,14 @@
+Запуск приложения
+
+Сборка (fat-jar со всеми зависимостями):
+1) Перейти в каталог проекта:
+   cd /home/roma/Документы/SETI2/lab3/places-app
+2) Собрать:
+   mvn clean package
+   Готовый файл: target/places-app-1.0-SNAPSHOT.jar
+
+Консольная версия:
+   java -jar target/places-app-1.0-SNAPSHOT.jar
+
+GUI-версия:
+   java -cp target/places-app-1.0-SNAPSHOT.jar ui.PlacesApp

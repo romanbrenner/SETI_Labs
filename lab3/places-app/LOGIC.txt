@@ -1,0 +1,52 @@
+Описание логики и зависимостей
+
+Стек и зависимости
+- Java 11+
+- Maven для сборки.
+- Единственная внешняя зависимость: com.fasterxml.jackson.core:jackson-databind (парсинг JSON).
+- Сборка fat-jar через maven-shade-plugin (все зависимости внутри target/places-app-1.0-SNAPSHOT.jar).
+
+Структура пакетов
+- app: Main (консоль) и PlacesService (основная логика и HTTP-вызовы).
+- models: Location, Weather, Place, PlaceWithDescription, CompleteResult (контейнеры данных).
+- ui: PlacesApp (Swing GUI).
+
+Ключевая логика (асинхронность)
+1) Поиск локаций: searchLocationsAsync(query)
+   - HTTP GET к GraphHopper Geocode API.
+   - Возвращает CompletableFuture<List<Location>>.
+
+2) Параллельные независимые вызовы (п.2 ТЗ): fetchAllDataParallelAsync(lat, lon)
+   - Стартует одновременно:
+     a) fetchWeatherAsync(lat, lon): OpenWeather API.
+     b) fetchNearbyPlacesAsync(lat, lon): Wikipedia geosearch.
+   - thenCombine собирает погоду + список мест и передает дальше без блокировок.
+
+3) Цепочка зависимых вызовов (п.п. 4 и 5 ТЗ): fetchDescriptionsAsync(places)
+   - Для каждого Place делает fetchDescriptionAsync(pageId) (Wikipedia extracts).
+   - CompletableFuture.allOf ждёт завершения всех описаний, затем собирает List<PlaceWithDescription>.
+   - Блокировка допустима только на финальном результате (join в Main или обработчик в GUI).
+
+4) Все результаты агрегируются в CompleteResult (погода + места с описаниями) и выводятся целиком.
+
+API-ключи
+- PlacesService содержит константы:
+  GRAPHHOPPER_API_KEY = "6100d12a-51a1-479b-b878-1bf7731df19c"
+  OPENWEATHER_API_KEY = "dccd0eabfa798da6326143f4b89fbd6c"
+  При необходимости ключи меняются в app/PlacesService.java.
+
+Обработка URI и локали
+- Locale.ROOT в форматировании чисел, чтобы всегда были точки.
+- В Википедия-запросе gscoord вертикальная черта закодирована как %7C, иначе URI.create бросает ошибку.
+
+Логирование асинхронности
+- В PlacesService выводятся System.out.println с именами потоков для запросов погоды, мест и описаний; видно работу ForkJoinPool.commonPool-* при параллельных вызовах.
+
+Интерфейсы
+- Консоль: app.Main — пошагово опрашивает пользователя, блокирует только на финальном join().
+- GUI: ui.PlacesApp (Swing) — события отправляют асинхронные запросы, итог показывается после завершения всех futures.
+
+Сборка и запуск
+- Сборка: mvn clean package (fat-jar target/places-app-1.0-SNAPSHOT.jar).
+- Консоль: java -jar target/places-app-1.0-SNAPSHOT.jar
+- GUI: java -cp target/places-app-1.0-SNAPSHOT.jar ui.PlacesApp.

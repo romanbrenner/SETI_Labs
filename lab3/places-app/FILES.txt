@@ -1,0 +1,38 @@
+Назначение файлов и функций
+
+app/Main.java
+- Точка входа консольной версии.
+- main(): спрашивает запрос, ищет локации, дает выбрать, затем блокируется только на финальном результатe fetchAllDataParallelAsync и выводит погоду + места.
+
+app/PlacesService.java
+- Вся сетевая и асинхронная логика.
+- searchLocationsAsync(String query): ищет локации через GraphHopper, возвращает CompletableFuture<List<Location>>.
+- fetchWeatherAsync(double lat, double lon): запрашивает погоду (OpenWeather), логирует поток, парсит в Weather.
+- fetchNearbyPlacesAsync(double lat, double lon): запрашивает список мест (Wikipedia geosearch), логирует поток, парсит в List<Place>.
+- fetchDescriptionAsync(long pageId): тянет описание места (Wikipedia extracts) для pageId, логирует поток, парсит строку.
+- fetchDescriptionsAsync(List<Place> places): параллельно тянет описания для всех мест, собирает List<PlaceWithDescription>, логирует старт/завершение.
+- fetchAllDataParallelAsync(double lat, double lon): параллельно стартует погоду и места, затем цепочкой тянет описания, возвращает CompleteResult (без промежуточных блокировок).
+- sendAsyncRequest(String url): общий асинхронный HTTP GET с HttpClient, возвращает JsonNode.
+- parseJson/parseLocations/parseWeather/parsePlaces/parseDescription: парсеры JSON в модельные классы.
+
+models/Location.java
+- DTO для локации: name, lat, lon, country, state; toString формирует человекочитаемое имя.
+
+models/Weather.java
+- DTO для погоды: описание, температура, влажность, ветер; toString форматирует в текст (Сelsius из Кельвинов).
+
+models/Place.java
+- DTO для места из geosearch: pageId, title, distance.
+
+models/PlaceWithDescription.java
+- Обертка Place + описание; toString выводит название, дистанцию и текст описания/заглушку.
+
+models/CompleteResult.java
+- Контейнер итогов: Weather + List<PlaceWithDescription>.
+
+ui/PlacesApp.java
+- Swing GUI.
+- Конструктор/инициализация: поля ввода, списки локаций, кнопки, текстовое поле результатов.
+- searchLocations(): вызывает service.searchLocationsAsync, наполняет список, управляет кнопками/сообщениями.
+- fetchCompleteData(): берет выбранную локацию, вызывает fetchAllDataParallelAsync, затем displayResults.
+- displayResults(Location, CompleteResult): собирает текст погоды и мест, выводит в textarea.
