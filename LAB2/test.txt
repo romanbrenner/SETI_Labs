@@ -1,0 +1,11 @@
+1) gcc lagrange_polynomial.c -o res && ./res 0.2 
+2) gcc lagrange_polynomial.c -o res && ./res 0.1 
+3) gcc lagrange_polynomial.c -o res && ./res 0.05 
+
+
+Графики:
+python3 visualize_polynomial.py 
+
+java FileServer 5000
+java FileClient 127.0.0.1 5000 test.txt
+java FileClient 127.0.0.1 5000 astah-uml_10.1.0.9ceee1-0_all.deb
