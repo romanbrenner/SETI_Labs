@@ -1,0 +1,5 @@
+сборка: 
+1)cd /home/roma/Документы/SETI2/lab5/socks-proxy
+2)mvn clean package
+запуск:
+1)java -jar target/socks-proxy-1.0-SNAPSHOT.jar 1080
